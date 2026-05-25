@@ -14,6 +14,7 @@ import {
   CancelCaseDto,
 } from './dto';
 import { SubmitCandidateDto } from '../candidate-submissions/dto/submit-candidate.dto';
+import { Public } from '../auth/public.decorator';
 
 @Controller('cases')
 export class CasesController {
@@ -39,6 +40,7 @@ export class CasesController {
     return this.casesService.sendForm(id);
   }
 
+  @Public()
   @Post(':id/submit-candidate')
   submitCandidate(
     @Param('id') id: string,
