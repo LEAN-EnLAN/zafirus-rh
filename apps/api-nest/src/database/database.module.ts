@@ -14,13 +14,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         username: config.get<string>('DATABASE_USER', 'postgres'),
         password: config.get<string>('DATABASE_PASSWORD', 'postgres'),
         database: config.get<string>('DATABASE_NAME', 'zafirus_rh'),
-        ssl: config.get<string>('DATABASE_SSL', 'false') === 'true'
-          ? { rejectUnauthorized: false }
-          : false,
+        ssl:
+          config.get<string>('DATABASE_SSL', 'false') === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
         autoLoadEntities: true,
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
         // IMPORTANT: synchronize MUST be false in production.
         // Use TypeORM migrations for schema changes.
-        // Only set TYPEORM_SYNC=true in local development if you understand the risk.
+        // Run migrations automatically in production deployments.
+        migrationsRun: config.get<string>('NODE_ENV') === 'production',
         synchronize: false,
       }),
     }),
