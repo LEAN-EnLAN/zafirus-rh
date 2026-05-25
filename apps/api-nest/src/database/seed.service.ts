@@ -255,7 +255,8 @@ export class SeedService {
     }));
 
     for (const action of input.auditActions ?? []) {
-      await this.audit(c.id, action, action.includes('candidate') ? 'candidate' : 'rrhh', action.includes('candidate') ? ActorType.USER : ActorType.USER);
+      const isCandidateAction = this.isCandidateAuditAction(action);
+      await this.audit(c.id, action, isCandidateAction ? 'candidate' : 'rrhh', ActorType.USER);
     }
 
     await this.emailRepo.save(this.emailRepo.create({
@@ -288,6 +289,13 @@ export class SeedService {
     }
 
     return { caseId: c.id };
+  }
+
+  private isCandidateAuditAction(action: string): boolean {
+    return [
+      'candidate_form_submitted',
+      'candidate_documents_uploaded',
+    ].includes(action);
   }
 
   private async createTasks(caseId: string, statuses: TaskStatus[]): Promise<void> {
