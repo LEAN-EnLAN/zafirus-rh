@@ -1,6 +1,6 @@
 import { Component, effect, EventEmitter, inject, OnDestroy, Output, signal } from '@angular/core';
 import { OnboardingMockService } from '../../../services/onboarding-mock.service';
-import { CaseStatus, AuditEvent, COUNTRIES, TEAMS, CONTRACT_TYPES } from '../../../models/onboarding-case.model';
+import { CaseStatus, AuditEvent, COUNTRIES, TEAMS, CONTRACT_TYPES, OnboardingTask } from '../../../models/onboarding-case.model';
 
 const JOURNEY_STAGES: { id: CaseStatus; label: string }[] = [
   { id: 'draft',                     label: 'Borrador' },
@@ -257,7 +257,7 @@ export class OverviewTabComponent implements OnDestroy {
     return m[status] || '';
   }
 
-  hasFailedTasks(tasks: any[]): boolean { return tasks.some(t => t.status === 'failed'); }
+  hasFailedTasks(tasks: OnboardingTask[]): boolean { return tasks.some(t => t.status === 'failed'); }
 
   milestone(status: CaseStatus, hasFailed: boolean): string {
     const m: Record<string, string> = {

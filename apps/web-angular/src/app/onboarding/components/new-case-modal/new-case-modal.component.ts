@@ -64,7 +64,7 @@ const EMPTY_FORM: CreateCaseData = {
                 <div>
                   <label class="block text-[11px] font-medium text-[var(--text-tertiary)] mb-1">CUIT/CUIL *</label>
                   <input [(ngModel)]="form.CI" name="CI" type="text" inputmode="numeric" maxlength="13" placeholder="Ej.: 20-12345678-3"
-                    (input)="onCuitInput($any($event.target).value)"
+                    (input)="onCuitInput($event)"
                     (blur)="onCuitBlur()"
                     [attr.aria-invalid]="!!cuitError()"
                     class="w-full bg-[var(--bg-elevated)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-focus)] font-mono tracking-[0.08em]"
@@ -303,8 +303,9 @@ export class NewCaseModalComponent {
     return todayIsoDate();
   }
 
-  onCuitInput(value: string): void {
-    this.form.CI = formatCuit(value);
+  onCuitInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.form.CI = formatCuit(input.value);
   }
 
   onCuitBlur(): void {

@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { OnboardingMockService } from '../../../onboarding/services/onboarding-mock.service';
 import { ZafirusLogoComponent } from '../zafirus-logo/zafirus-logo.component';
@@ -35,6 +35,15 @@ interface SidebarSection {
           <p class="truncate text-xs font-medium uppercase tracking-[0.22em] text-[var(--shell-muted)]">Espacio de RRHH</p>
         </div>
       </a>
+
+      <input
+        type="search"
+        placeholder="Buscar..."
+        aria-label="Buscar casos"
+        [value]="searchTerm()"
+        (input)="onSearchInput($event)"
+        class="mt-4 w-full bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 text-sm px-3 py-2 focus:outline-none focus:border-white/20"
+      />
 
       <div class="mt-6 space-y-4 overflow-y-auto pr-1">
         @for (section of sections(); track section.title) {
@@ -78,6 +87,14 @@ interface SidebarSection {
 })
 export class SidebarComponent {
   readonly svc = inject(OnboardingMockService);
+  readonly searchTerm = signal('');
+  readonly searchChange = output<string>();
+
+  onSearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.searchTerm.set(value);
+    this.searchChange.emit(value);
+  }
 
   readonly sections = computed<SidebarSection[]>(() => [
     {

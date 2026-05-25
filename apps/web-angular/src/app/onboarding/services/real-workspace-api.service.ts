@@ -18,37 +18,58 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
     firstName: string,
     lastName: string
   ): Promise<CreateGoogleUserResponse> {
-    // TODO: Call the backend endpoint that provisions a Google Workspace user via Google Admin SDK.
+    /**
+     * Provisions a Google Workspace user via Google Admin SDK.
+     * @deferred Phase 5 — Backend integration (NestJS HTTP client).
+     */
     return { success: false, error: 'API no configurada' };
   }
 
   async addUserToGroups(userId: string, groupEmails: string[]): Promise<AddUserToGroupsResponse> {
-    // TODO: Call the backend endpoint that adds the user to the required Google Groups.
+    /**
+     * Provisions a Google Workspace user via Google Admin SDK.
+     * @deferred Phase 5 — Backend integration (NestJS HTTP client).
+     */
     return { success: false, error: 'API no configurada' };
   }
 
   async configureGmailSignature(userId: string, signature: string): Promise<ConfigureGmailSignatureResponse> {
-    // TODO: Call the backend endpoint that writes the approved Gmail signature template.
+    /**
+     * Provisions a Google Workspace user via Google Admin SDK.
+     * @deferred Phase 5 — Backend integration (NestJS HTTP client).
+     */
     return { success: false, error: 'API no configurada' };
   }
 
   async sendWelcomeEmail(to: string, subject: string, body: string): Promise<SendWelcomeEmailResponse> {
-    // TODO: Call the backend email service that sends the onboarding welcome message.
+    /**
+     * Provisions a Google Workspace user via Google Admin SDK.
+     * @deferred Phase 5 — Backend integration (NestJS HTTP client).
+     */
     return { success: false, error: 'API no configurada' };
   }
 
   async announceInGroup(groupEmail: string, message: string): Promise<AnnounceInGroupResponse> {
-    // TODO: Call the backend endpoint that posts the announcement into the selected Google Group.
+    /**
+     * Provisions a Google Workspace user via Google Admin SDK.
+     * @deferred Phase 5 — Backend integration (NestJS HTTP client).
+     */
     return { success: false, error: 'API no configurada' };
   }
 
   async requestDevice(employeeId: string, deviceType: string): Promise<RequestDeviceResponse> {
-    // TODO: Call the backend IT workflow that opens a device provisioning ticket.
+    /**
+     * Provisions a Google Workspace user via Google Admin SDK.
+     * @deferred Phase 5 — Backend integration (NestJS HTTP client).
+     */
     return { success: false, error: 'API no configurada' };
   }
 
   async provisionWorkspace(employeeId: string): Promise<ProvisionWorkspaceResponse> {
-    // TODO: Call the backend orchestration endpoint that completes full workspace provisioning.
+    /**
+     * Provisions a Google Workspace user via Google Admin SDK.
+     * @deferred Phase 5 — Backend integration (NestJS HTTP client).
+     */
     return { success: false, error: 'API no configurada' };
   }
 }

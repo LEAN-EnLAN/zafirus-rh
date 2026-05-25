@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, ViewChildren, QueryList, Output, EventEmitter } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import DOMPurify from 'dompurify';
 import { OnboardingMockService } from '../../../services/onboarding-mock.service';
 import { EmailTemplate } from '../../../models/onboarding-case.model';
 import { ZafirusLogoComponent } from '../../../../shared/components/zafirus-logo/zafirus-logo.component';
@@ -215,7 +216,7 @@ const GROUP_META: Record<VariableGroup, {
 
                           <div class="space-y-3">
                             <input type="date" [attr.min]="todayDate()" [attr.aria-invalid]="!!scheduleError()" [style.borderColor]="scheduleError() ? 'var(--status-error)' : null" [value]="scheduleDate()"
-                              (input)="scheduleDate.set($any($event.target).value)"
+                              (input)="onScheduleChange($event)"
                               class="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-elevated)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]" />
                             @if (scheduleError()) {
                               <p class="text-xs font-medium text-[var(--status-error)]" role="alert">{{ scheduleError() }}</p>
@@ -621,6 +622,11 @@ export class EmailTabComponent implements AfterViewInit, OnDestroy {
     return !!date && date >= this.todayDate();
   }
 
+  onScheduleChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.scheduleDate.set(input.value);
+  }
+
   openEmailActions(): void {
     const c = this.svc.selectedCase();
     if (!c?.emailTemplate) return;
@@ -805,10 +811,9 @@ export class EmailTabComponent implements AfterViewInit, OnDestroy {
 
   /**
    * Resolve body HTML for preview: replace pills with plain text values.
-   * Security: strips script tags and on* attributes.
-   * TODO: Production needs stricter sanitization before saving/sending.
+   * Security: strips script tags, on* attributes and runs DOMPurify.
    */
-  previewHtml(): SafeHtml {
+  readonly previewHtml = computed<SafeHtml | string>(() => {
     const c = this.svc.selectedCase();
     if (!c?.emailTemplate?.bodyHtml) return '';
     let html = this._sanitizeForWorkspace(c.emailTemplate.bodyHtml);
@@ -833,10 +838,9 @@ export class EmailTabComponent implements AfterViewInit, OnDestroy {
     doc.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
 
     const cleanHtml = doc.body.innerHTML;
-    // bypassSecurityTrustHtml is necessary here for rendering the email preview.
-    // TODO: Production requires server-side sanitization before persisting.
-    return this.sanitizer.bypassSecurityTrustHtml(cleanHtml);
-  }
+    const purifiedHtml = DOMPurify.sanitize(cleanHtml);
+    return this.sanitizer.bypassSecurityTrustHtml(purifiedHtml);
+  });
 
   private _toDateInputValue(timestamp: number): string {
     const date = new Date(timestamp);
