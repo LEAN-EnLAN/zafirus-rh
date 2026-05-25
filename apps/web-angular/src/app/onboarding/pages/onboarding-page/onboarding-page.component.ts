@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OnboardingMockService } from '../../services/onboarding-mock.service';
@@ -19,9 +19,46 @@ import { CandidatePanelComponent } from '../../candidate/candidate-panel/candida
       min-width: 0;
       flex: 1 1 auto;
     }
+
+    @keyframes overlayFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes checkPopIn {
+      0% { opacity: 0; transform: scale(0.7); }
+      70% { opacity: 1; transform: scale(1.08); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.12); }
+    }
+
+    .operative-overlay-enter { animation: overlayFadeIn 220ms ease-out both; }
+    .operative-check-enter { animation: checkPopIn 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+    .demo-pulse { animation: subtlePulse 1.8s ease-in-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .operative-overlay-enter,
+      .operative-check-enter,
+      .demo-pulse {
+        animation: none !important;
+      }
+    }
   `],
   template: `
-    <div class="flex h-full min-h-0 min-w-0 w-full flex-1 overflow-hidden">
+    <div class="relative flex h-full min-h-0 min-w-0 w-full flex-1 overflow-hidden">
+      @if (svc.wizardMode()) {
+        <div class="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center px-4">
+          <div class="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)]/90 px-3 py-1 text-xs text-[var(--text-secondary)] shadow-sm backdrop-blur-sm">
+            <span class="demo-pulse inline-block h-2 w-2 rounded-full bg-[var(--status-info)]"></span>
+            <span>Demo automática activa</span>
+          </div>
+        </div>
+      }
+
       <!-- RRHH Panel -->
       <div class="flex flex-1 min-h-0 min-w-0 overflow-hidden">
         <!-- Case list sidebar -->
@@ -69,13 +106,35 @@ import { CandidatePanelComponent } from '../../candidate/candidate-panel/candida
           </div>
         </div>
       }
+
+      @if (showOperativeOverlay()) {
+        <div class="operative-overlay-enter absolute inset-0 z-30 flex items-center justify-center bg-[var(--bg-base)]/60 p-4 backdrop-blur-[1px]">
+          <div class="w-full max-w-md rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 text-center shadow-xl">
+            <div class="operative-check-enter mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--status-success-subtle)] text-[var(--status-success)]">
+              <svg viewBox="0 0 24 24" fill="none" class="h-8 w-8" aria-hidden="true">
+                <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </div>
+            <p class="text-lg font-semibold text-[var(--text-primary)]">¡Alta completada!</p>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">{{ operativeName() }} está operativo/a</p>
+            <button type="button" (click)="dismissOperativeOverlay()" class="mt-4 text-xs font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">Cerrar</button>
+          </div>
+        </div>
+      }
     </div>
   `,
 })
 export class OnboardingPageComponent implements OnInit {
   readonly svc = inject(OnboardingMockService);
+  readonly showOperativeOverlay = signal(false);
+  readonly operativeName = signal('');
+
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private overlayTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private lastTrackedCaseId: string | null = null;
+  private lastTrackedStatus: string | null = null;
+
   private readonly wizardTabSync = effect(() => {
     if (!this.svc.isDemo() || !this.svc.autoRun()) return;
 
@@ -97,6 +156,35 @@ export class OnboardingPageComponent implements OnInit {
     }
   }, { allowSignalWrites: true });
 
+  private readonly operativeOverlaySync = effect(() => {
+    const selected = this.svc.selectedCase();
+    const caseId = selected?.id ?? null;
+    const status = selected?.status ?? null;
+
+    if (caseId !== this.lastTrackedCaseId) {
+      this.lastTrackedCaseId = caseId;
+      this.lastTrackedStatus = status;
+      return;
+    }
+
+    const transitionedToOperative = this.lastTrackedStatus !== 'operative' && status === 'operative';
+    this.lastTrackedStatus = status;
+
+    if (!transitionedToOperative || !selected) return;
+
+    this.showOperativeOverlay.set(true);
+    this.operativeName.set(`${selected.employee.name} ${selected.employee.lastName}`.trim());
+
+    if (this.overlayTimeoutId) {
+      clearTimeout(this.overlayTimeoutId);
+    }
+
+    this.overlayTimeoutId = setTimeout(() => {
+      this.showOperativeOverlay.set(false);
+      this.overlayTimeoutId = null;
+    }, 3000);
+  }, { allowSignalWrites: true });
+
   ngOnInit(): void {
     this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       const mode = data['mode'];
@@ -115,6 +203,14 @@ export class OnboardingPageComponent implements OnInit {
     this.route.fragment.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(fragment => {
       this.applyDemoFragment(fragment);
     });
+  }
+
+  dismissOperativeOverlay(): void {
+    this.showOperativeOverlay.set(false);
+    if (this.overlayTimeoutId) {
+      clearTimeout(this.overlayTimeoutId);
+      this.overlayTimeoutId = null;
+    }
   }
 
   applyDemoFragment(fragment: string | null): void {
