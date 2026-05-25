@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SeedService } from './seed.service';
 
@@ -16,7 +16,7 @@ export class SeedController {
   @ApiResponse({ status: 201, description: 'Seed completed' })
   @ApiResponse({ status: 400, description: 'Invalid seed request' })
   @ApiResponse({ status: 404, description: 'Seed resource not found' })
-  seed() {
-    return this.seedService.run();
+  seed(@Query('full') full?: string) {
+    return this.seedService.run(full === 'true');
   }
 }

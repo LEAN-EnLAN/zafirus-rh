@@ -28,9 +28,13 @@ export class SeedService {
     private readonly auditRepo: Repository<AuditEvent>,
   ) {}
 
-  async run(): Promise<{ message: string }> {
-    this.logger.log('Seeding demo data...');
+  async run(full = false): Promise<{ message: string }> {
+    this.logger.log(`Seeding demo data (${full ? 'full' : 'quick'})...`);
+    if (!full) return this.seedQuick();
+    return this.seedFull();
+  }
 
+  private async seedQuick(): Promise<{ message: string }> {
     // ── Employee 1: María Pérez — draft case
     const emp1 = await this.employeeRepo.save(
       this.employeeRepo.create({
@@ -52,14 +56,6 @@ export class SeedService {
       }),
     );
     await this.audit(case1.id, 'case_created', 'rrhh');
-    await this.emailRepo.save(
-      this.emailRepo.create({
-        caseId: case1.id,
-        subject: '¡Bienvenida/o a Zafirus Technologies!',
-        bodyHtml: '<p>Email de bienvenida para María Pérez</p>',
-        approved: false,
-      }),
-    );
 
     // ── Employee 2: Lucas Gómez — candidate_submitted
     const emp2 = await this.employeeRepo.save(
@@ -83,29 +79,6 @@ export class SeedService {
       }),
     );
     await this.audit(case2.id, 'case_created', 'rrhh');
-    await this.audit(case2.id, 'candidate_form_sent', 'rrhh');
-    await this.audit(case2.id, 'candidate_form_submitted', 'candidate', ActorType.USER);
-    await this.subRepo.save(
-      this.subRepo.create({
-        caseId: case2.id,
-        taxIdType: 'RUT',
-        taxIdValue: '12.345.678-9',
-        paymentMethod: 'WIRE',
-        bankAccount: null,
-        walletAddress: null,
-        references: [
-          {
-            fullName: 'Carlos Mendoza',
-            relationship: 'Jefe directo',
-            company: 'DesignCorp',
-            email: 'carlos@designcorp.com',
-            phone: '+56 9 5555 1234',
-          },
-        ],
-        rawPayload: {},
-        submittedAt: new Date(),
-      }),
-    );
 
     // ── Employee 3: Juan López — ready_to_activate with tasks
     const emp3 = await this.employeeRepo.save(
@@ -135,63 +108,220 @@ export class SeedService {
       }),
     );
     await this.audit(case3.id, 'case_created', 'rrhh');
-    await this.audit(case3.id, 'candidate_form_sent', 'rrhh');
-    await this.audit(case3.id, 'candidate_form_submitted', 'candidate', ActorType.USER);
-    await this.audit(case3.id, 'review_started', 'rrhh');
-    await this.audit(case3.id, 'candidate_data_consolidated', 'rrhh');
-    await this.audit(case3.id, 'case_approved', 'rrhh');
-    await this.subRepo.save(
-      this.subRepo.create({
-        caseId: case3.id,
-        taxIdType: 'CUIT',
-        taxIdValue: '20-34567890-1',
-        paymentMethod: 'CBU',
-        bankAccount: '0070234565000000123456',
-        references: [
-          {
-            fullName: 'Martín Sosa',
-            relationship: 'Ex-jefe',
-            company: 'TechCorp SA',
-            email: 'martin.sosa@techcorp.com',
-            phone: '+54 341 555-0101',
-          },
-        ],
-        rawPayload: {},
-        submittedAt: new Date(Date.now() - 86400000),
-      }),
-    );
-    await this.emailRepo.save(
-      this.emailRepo.create({
-        caseId: case3.id,
-        subject: '¡Bienvenida/o a Zafirus Technologies!',
-        bodyHtml:
-          '<h1>¡BIENVENIDA/O A ZAFIRUS TECHNOLOGIES!</h1><p>Hola Juan, nos alegra mucho que te sumes al equipo.</p>',
-        approved: true,
-        approvedAt: new Date(),
-      }),
-    );
-
-    // Create some pending tasks for case 3
-    const taskTypes: { type: TaskType; label: string }[] = [
-      { type: TaskType.CREATE_GOOGLE_USER, label: 'Crear usuario de Google Workspace' },
-      { type: TaskType.ADD_GOOGLE_GROUPS, label: 'Agregar a grupos' },
-      { type: TaskType.CONFIGURE_GMAIL_SIGNATURE, label: 'Configurar firma de Gmail' },
-      { type: TaskType.SEND_WELCOME_EMAIL, label: 'Enviar email de bienvenida' },
-      { type: TaskType.REQUEST_DEVICE, label: 'Solicitar equipo' },
-    ];
-    for (const t of taskTypes) {
-      await this.taskRepo.save(
-        this.taskRepo.create({
-          caseId: case3.id,
-          type: t.type,
-          label: t.label,
-          status: TaskStatus.PENDING,
-        }),
-      );
-    }
 
     this.logger.log('Seed complete: 3 employees, 3 cases created');
     return { message: 'Seed complete: 3 employees, 3 cases' };
+  }
+
+  private async seedFull(): Promise<{ message: string }> {
+    const groupSuggestions = {
+      ar: ['all-argentina@zafirus.tech', 'people-ops@zafirus.tech'],
+      cl: ['all-chile@zafirus.tech', 'design@zafirus.tech'],
+      uy: ['all-uruguay@zafirus.tech', 'frontend@zafirus.tech'],
+      pe: ['all-peru@zafirus.tech', 'ops@zafirus.tech'],
+      mx: ['all-mexico@zafirus.tech', 'backend@zafirus.tech'],
+    };
+
+    const sofia = await this.createCase({
+      firstName: 'Sofía', lastName: 'López', personalEmail: 'sofia.lopez@gmail.com', role: 'Product Manager', area: 'product', location: 'CABA, Argentina', managerName: 'Mariano Costa', documentId: '30111222', taxIdValue: '27-30111222-8', bankAccount: '2850590940090418135201', status: CaseStatus.DRAFT, startDateOffset: 20,
+      auditActions: ['case_created', 'employee_profile_completed', 'email_template_drafted', 'groups_suggested'],
+      email: { approved: false, subject: '¡Bienvenida Sofía a Zafirus!', variables: { country: 'AR', groupSuggestions: groupSuggestions.ar, templateState: 'draft' } },
+    });
+
+    const lucas = await this.createCase({
+      firstName: 'Lucas', lastName: 'Gómez', personalEmail: 'lucas.gomez@gmail.com', role: 'Diseño UX', area: 'design', location: 'Santiago, Chile', managerName: 'Ana Silva', documentId: '18900321', taxIdValue: '18.900.321-7', bankAccount: '0010987654321', status: CaseStatus.CANDIDATE_INVITED, startDateOffset: 15,
+      auditActions: ['case_created', 'candidate_form_sent', 'candidate_reminder_sent', 'groups_suggested'],
+      email: { approved: true, subject: 'Lucas, completa tu onboarding en Zafirus', variables: { country: 'CL', groupSuggestions: groupSuggestions.cl, templateState: 'scheduled' }, approvedAtOffsetHours: -6 },
+      token: true,
+    });
+
+    const valentina = await this.createCase({
+      firstName: 'Valentina', lastName: 'Martínez', personalEmail: 'valentina.martinez@gmail.com', role: 'Frontend Developer', area: 'engineering', location: 'Montevideo, Uruguay', managerName: 'Romina Bela', documentId: '48722113', taxIdValue: '48722113', bankAccount: 'BROU-001-88991234', status: CaseStatus.CANDIDATE_SUBMITTED, startDateOffset: 10,
+      auditActions: ['case_created', 'candidate_form_sent', 'candidate_form_submitted', 'candidate_documents_uploaded', 'candidate_data_pending_consolidation'],
+      email: { approved: true, subject: 'Valentina, te damos la bienvenida a Zafirus', variables: { country: 'UY', groupSuggestions: groupSuggestions.uy, templateState: 'sent' }, approvedAtOffsetHours: -20 },
+      token: true,
+      candidateSubmittedAtOffsetHours: -18,
+      submission: {
+        taxIdType: 'CI',
+        paymentMethod: 'WIRE',
+        bankAccount: null,
+        walletAddress: null,
+        internationalBankData: { bankName: 'Banco Itaú Uruguay', swift: 'BITUUYMM', accountHolder: 'Valentina Martínez', accountNumber: 'UY6600100000000001234567' },
+        references: [
+          { fullName: 'Ignacio Pereda', relationship: 'Líder técnico', company: 'PixelSoft', email: 'ignacio.pereda@pixelsoft.com', phone: '+598 98 222 451' },
+          { fullName: 'María Noel Duarte', relationship: 'PM', company: 'TuProducto', email: 'maria.duarte@tuproducto.io', phone: '+598 99 918 100' },
+        ],
+        documents: [
+          { type: 'id_front', name: 'ci_frente_valentina.jpg', sizeKb: 440 },
+          { type: 'id_back', name: 'ci_dorso_valentina.jpg', sizeKb: 418 },
+          { type: 'tax_certificate', name: 'cert_dgi_valentina.pdf', sizeKb: 292 },
+        ],
+      },
+    });
+
+    await this.createCase({
+      firstName: 'Diego', lastName: 'Navarro', personalEmail: 'diego.navarro@gmail.com', role: 'Analista RRHH', area: 'people', location: 'Córdoba, Argentina', managerName: 'Paula Méndez', documentId: '33221100', taxIdValue: '20-33221100-4', bankAccount: '0720123499000000881010', status: CaseStatus.HR_REVIEW, startDateOffset: 8,
+      auditActions: ['case_created', 'candidate_form_sent', 'candidate_form_submitted', 'review_started', 'candidate_data_consolidated', 'review_comment_added'],
+      email: { approved: true, subject: 'Diego, próximos pasos de tu ingreso', variables: { country: 'AR', groupSuggestions: groupSuggestions.ar, templateState: 'scheduled' }, approvedAtOffsetHours: -16 },
+      token: true,
+      candidateSubmittedAtOffsetHours: -30,
+      dataConsolidatedAtOffsetHours: -8,
+      submission: {
+        taxIdType: 'CUIT', paymentMethod: 'CBU', bankAccount: '0720123499000000881010', walletAddress: null,
+        references: [{ fullName: 'Elena Gutiérrez', relationship: 'Gerente HR', company: 'Talento Hoy', email: 'elena.gutierrez@talentohoy.com', phone: '+54 351 444-1990' }],
+        documents: [{ type: 'constancia_cuit', name: 'cuit_diego.pdf' }],
+      },
+    });
+
+    await this.createCase({
+      firstName: 'Camila', lastName: 'Torres', personalEmail: 'camila.torres@gmail.com', role: 'Operations Lead', area: 'operations', location: 'Lima, Perú', managerName: 'Fernando Rocha', documentId: '45781902', taxIdValue: '10457819021', bankAccount: '00219400045566778899', status: CaseStatus.READY_TO_ACTIVATE, startDateOffset: 6,
+      auditActions: ['case_created', 'candidate_form_sent', 'candidate_form_submitted', 'review_started', 'candidate_data_consolidated', 'case_approved', 'activation_queued'],
+      email: { approved: true, subject: 'Camila, bienvenida al equipo Zafirus', variables: { country: 'PE', groupSuggestions: groupSuggestions.pe, templateState: 'draft' }, approvedAtOffsetHours: -12 },
+      token: true,
+      candidateSubmittedAtOffsetHours: -40,
+      dataConsolidatedAtOffsetHours: -24,
+      approvedAtOffsetHours: -10,
+      submission: {
+        taxIdType: 'RUC', paymentMethod: 'WIRE', bankAccount: '00219400045566778899', walletAddress: null,
+        internationalBankData: { bankName: 'BCP', swift: 'BCPLPEPL', accountHolder: 'Camila Torres', accountNumber: '193-00219400045566778899-11' },
+        references: [{ fullName: 'Juan Carlos Casas', relationship: 'Director de Operaciones', company: 'Andes Logistics', email: 'jccasas@andeslogistics.pe', phone: '+51 987 000 215' }],
+        documents: [{ type: 'ruc', name: 'ruc_camila.pdf' }],
+      },
+    });
+
+    const juan = await this.createCase({
+      firstName: 'Juan', lastName: 'Herrera', personalEmail: 'juan.herrera@gmail.com', role: 'Backend Engineer', area: 'engineering', location: 'CDMX, México', managerName: 'Ágata Fidani', documentId: 'MEX-HERJ8801', taxIdValue: 'HEHJ880115QQ1', bankAccount: '646180157400012345', status: CaseStatus.ACTIVATING, startDateOffset: 2,
+      auditActions: ['case_created', 'candidate_form_sent', 'candidate_form_submitted', 'review_started', 'candidate_data_consolidated', 'case_approved', 'activation_started'],
+      email: { approved: true, subject: 'Juan, activación de tu cuenta corporativa', variables: { country: 'MX', groupSuggestions: groupSuggestions.mx, templateState: 'sent' }, approvedAtOffsetHours: -36 },
+      token: true,
+      candidateSubmittedAtOffsetHours: -72,
+      dataConsolidatedAtOffsetHours: -60,
+      approvedAtOffsetHours: -48,
+      activatedAtOffsetHours: -6,
+      submission: {
+        taxIdType: 'RFC', paymentMethod: 'CBU', bankAccount: '646180157400012345', walletAddress: null,
+        references: [{ fullName: 'Gabriela Pineda', relationship: 'Engineering Manager', company: 'Norte Tech', email: 'gabriela.pineda@nortetech.mx', phone: '+52 55 8888 1020' }],
+        documents: [{ type: 'rfc_constancia', name: 'constancia_rfc_juan.pdf' }],
+      },
+    });
+
+    await this.createTasks(juan.caseId, [TaskStatus.SUCCESS, TaskStatus.SUCCESS, TaskStatus.PENDING, TaskStatus.PENDING, TaskStatus.PENDING, TaskStatus.PENDING, TaskStatus.PENDING, TaskStatus.PENDING]);
+
+    const lucia = await this.createCase({
+      firstName: 'Lucía', lastName: 'Ramírez', personalEmail: 'lucia.ramirez@gmail.com', role: 'Finance Analyst', area: 'finance', location: 'Mendoza, Argentina', managerName: 'Julieta Banegas', documentId: '27889911', taxIdValue: '27-27889911-9', bankAccount: '1910044455000066778899', status: CaseStatus.OPERATIVE, startDateOffset: -5,
+      auditActions: ['case_created', 'candidate_form_sent', 'candidate_form_submitted', 'review_started', 'candidate_data_consolidated', 'case_approved', 'activation_completed', 'fully_operative'],
+      email: { approved: true, subject: 'Lucía, ya estás operativa en Zafirus', variables: { country: 'AR', groupSuggestions: groupSuggestions.ar, templateState: 'sent' }, approvedAtOffsetHours: -110 },
+      token: true,
+      candidateSubmittedAtOffsetHours: -140,
+      dataConsolidatedAtOffsetHours: -130,
+      approvedAtOffsetHours: -120,
+      activatedAtOffsetHours: -115,
+      submission: {
+        taxIdType: 'CUIT', paymentMethod: 'CBU', bankAccount: '1910044455000066778899', walletAddress: null,
+        references: [{ fullName: 'Raúl Acosta', relationship: 'Finance Lead', company: 'LibroMayor SA', email: 'r.acosta@libromayor.com', phone: '+54 261 555-9022' }],
+        documents: [{ type: 'cbu', name: 'cert_cbu_lucia.pdf' }],
+      },
+    });
+    await this.createTasks(lucia.caseId, [TaskStatus.SUCCESS, TaskStatus.SUCCESS, TaskStatus.SUCCESS, TaskStatus.SUCCESS, TaskStatus.SUCCESS, TaskStatus.SUCCESS, TaskStatus.SUCCESS, TaskStatus.SUCCESS]);
+
+    this.logger.log(`Seed complete: 7 employees, 7 cases created (${sofia.caseId}, ${lucas.caseId}, ${valentina.caseId})`);
+    return { message: 'Seed complete: 7 employees, 7 cases' };
+  }
+
+  private async createCase(input: any): Promise<{ caseId: string }> {
+    const emp = await this.employeeRepo.save(this.employeeRepo.create({
+      firstName: input.firstName,
+      lastName: input.lastName,
+      personalEmail: input.personalEmail,
+      corporateEmail: this.generateCorporateEmail(input.firstName, input.lastName),
+      role: input.role,
+      area: input.area,
+      location: input.location,
+      startDate: this.futureDate(input.startDateOffset),
+      managerName: input.managerName,
+      documentId: input.documentId,
+      taxIdValue: input.taxIdValue,
+      bankAccount: input.bankAccount,
+    }));
+
+    const c = await this.caseRepo.save(this.caseRepo.create({
+      employeeId: emp.id,
+      status: input.status,
+      candidateToken: input.token ? this.token() : null,
+      candidateSubmittedAt: this.offsetDate(input.candidateSubmittedAtOffsetHours),
+      dataConsolidatedAt: this.offsetDate(input.dataConsolidatedAtOffsetHours),
+      approvedAt: this.offsetDate(input.approvedAtOffsetHours),
+      activatedAt: this.offsetDate(input.activatedAtOffsetHours),
+    }));
+
+    for (const action of input.auditActions ?? []) {
+      const isCandidateAction = this.isCandidateAuditAction(action);
+      await this.audit(c.id, action, isCandidateAction ? 'candidate' : 'rrhh', ActorType.USER);
+    }
+
+    await this.emailRepo.save(this.emailRepo.create({
+      caseId: c.id,
+      subject: input.email.subject,
+      bodyHtml: `<p>${input.email.subject}</p><p>Hola ${input.firstName}, este es tu correo de onboarding.</p>`,
+      variables: input.email.variables,
+      approved: input.email.approved,
+      approvedAt: this.offsetDate(input.email.approvedAtOffsetHours),
+      changedAfterApproval: false,
+    }));
+
+    if (input.submission) {
+      await this.subRepo.save(this.subRepo.create({
+        caseId: c.id,
+        taxIdType: input.submission.taxIdType,
+        taxIdValue: input.taxIdValue,
+        paymentMethod: input.submission.paymentMethod,
+        bankAccount: input.submission.bankAccount,
+        walletAddress: input.submission.walletAddress,
+        internationalBankData: input.submission.internationalBankData ?? null,
+        references: input.submission.references,
+        documents: input.submission.documents,
+        rawPayload: {
+          profileComplete: true,
+          emergencyContact: { name: 'Contacto Familiar', phone: '+54 11 4000-1000' },
+        },
+        submittedAt: this.offsetDate(input.candidateSubmittedAtOffsetHours) ?? new Date(),
+      }));
+    }
+
+    return { caseId: c.id };
+  }
+
+  private isCandidateAuditAction(action: string): boolean {
+    return [
+      'candidate_form_submitted',
+      'candidate_documents_uploaded',
+    ].includes(action);
+  }
+
+  private async createTasks(caseId: string, statuses: TaskStatus[]): Promise<void> {
+    const taskTypes: { type: TaskType; label: string }[] = [
+      { type: TaskType.CREATE_GOOGLE_USER, label: 'Crear usuario de Google Workspace' },
+      { type: TaskType.ADD_GOOGLE_GROUPS, label: 'Agregar a grupos sugeridos' },
+      { type: TaskType.CONFIGURE_GMAIL_SIGNATURE, label: 'Configurar firma Gmail' },
+      { type: TaskType.SEND_WELCOME_EMAIL, label: 'Enviar welcome email' },
+      { type: TaskType.ANNOUNCE_IN_GROUPS, label: 'Anunciar en grupos' },
+      { type: TaskType.POST_INTERNAL_ANNOUNCEMENT, label: 'Publicar anuncio interno' },
+      { type: TaskType.REQUEST_DEVICE, label: 'Solicitar equipo' },
+      { type: TaskType.NOTIFY_ADMINISTRATION, label: 'Notificar administración' },
+    ];
+
+    for (let i = 0; i < taskTypes.length; i++) {
+      const s = statuses[i] ?? TaskStatus.PENDING;
+      await this.taskRepo.save(this.taskRepo.create({
+        caseId,
+        type: taskTypes[i].type,
+        label: taskTypes[i].label,
+        status: s,
+        attempts: s === TaskStatus.PENDING ? 0 : 1,
+        startedAt: s === TaskStatus.PENDING ? null : new Date(Date.now() - (i + 2) * 3600000),
+        completedAt: s === TaskStatus.SUCCESS ? new Date(Date.now() - (i + 1) * 3000000) : null,
+      }));
+    }
   }
 
   private async audit(
@@ -215,6 +345,19 @@ export class SeedService {
     const d = new Date();
     d.setDate(d.getDate() + days);
     return d.toISOString().split('T')[0];
+  }
+
+  private offsetDate(hours?: number): Date | null {
+    if (hours === undefined) return null;
+    return new Date(Date.now() + hours * 3600000);
+  }
+
+  private generateCorporateEmail(first: string, last: string): string {
+    const removeAccents = (str: string) =>
+      str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const initial = removeAccents(first.charAt(0).toLowerCase());
+    const surname = removeAccents(last.split(' ')[0].toLowerCase().replace(/[^a-z]/g, ''));
+    return `${initial}${surname}@zafirus.tech`;
   }
 
   private token(): string {
