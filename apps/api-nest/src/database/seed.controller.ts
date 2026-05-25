@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Post, Query } from '@nestjs/common';
 import { SeedService } from './seed.service';
 
 /**
@@ -10,7 +10,7 @@ export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
   @Post('seed')
-  seed() {
-    return this.seedService.run();
+  seed(@Query('full') full?: string) {
+    return this.seedService.run(full === 'true');
   }
 }
