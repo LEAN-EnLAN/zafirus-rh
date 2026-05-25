@@ -51,8 +51,7 @@ import { CandidatePanelComponent } from '../../candidate/candidate-panel/candida
 
       <!-- Candidate panel -->
       @if (svc.isDemo() && svc.selectedCase() && svc.candidateViewOpen()) {
-        <div class="hidden min-[1180px]:flex flex-col bg-[var(--bg-subtle)] min-h-0 overflow-hidden border-l border-[var(--border-subtle)]"
-          style="width: clamp(360px, 30vw, 460px)">
+        <div class="hidden min-[1180px]:flex min-[1180px]:w-[clamp(360px,30vw,460px)] min-[1180px]:min-w-[360px] min-[1180px]:max-w-[460px] flex-none shrink-0 flex-col bg-[var(--bg-subtle)] min-h-0 min-w-0 overflow-hidden border-l border-[var(--border-subtle)]">
           <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4">
             <div class="mb-3 flex items-center justify-end">
               <button

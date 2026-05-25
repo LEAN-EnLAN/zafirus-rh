@@ -32,7 +32,7 @@ const STEPS = [
             </p>
           </div>
         } @else {
-          <div class="max-w-xl mx-auto px-4 py-6">
+          <div class="mx-auto w-full max-w-xl min-w-0 overflow-x-hidden px-4 py-6">
             <!-- Welcome header -->
             <div class="flex flex-col items-center justify-center pt-4 pb-4 text-center mb-6">
               <div class="mb-4">
