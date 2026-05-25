@@ -1,6 +1,7 @@
 import { Controller, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SeedService } from './seed.service';
+import { Public } from '../auth/public.decorator';
 
 /**
  * Dev-only endpoint. In production this controller should be disabled
@@ -11,6 +12,7 @@ import { SeedService } from './seed.service';
 export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
+  @Public()
   @Post('seed')
   @ApiOperation({ summary: 'Seed development data' })
   @ApiResponse({ status: 201, description: 'Seed completed' })

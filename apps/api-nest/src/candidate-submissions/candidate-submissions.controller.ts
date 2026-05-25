@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CandidateSubmissionsService } from './candidate-submissions.service';
 import { SubmitCandidateDto } from './dto/submit-candidate.dto';
+import { Public } from '../auth/public.decorator';
 
 @Controller()
 @ApiTags('candidate-submissions')
@@ -17,6 +18,7 @@ export class CandidateSubmissionsController {
     return this.service.findByCaseId(caseId);
   }
 
+  @Public()
   @Post('cases/:id/candidate-submission')
   @ApiOperation({ summary: 'Create candidate submission for a case' })
   @ApiResponse({ status: 201, description: 'Candidate submission created' })

@@ -8,6 +8,7 @@ import {
   CancelCaseDto,
 } from './dto';
 import { SubmitCandidateDto } from '../candidate-submissions/dto/submit-candidate.dto';
+import { Public } from '../auth/public.decorator';
 
 @Controller('cases')
 @ApiTags('cases')
@@ -50,6 +51,7 @@ export class CasesController {
     return this.casesService.sendForm(id);
   }
 
+  @Public()
   @Post(':id/submit-candidate')
   @ApiOperation({ summary: 'Submit candidate data for case' })
   @ApiResponse({ status: 201, description: 'Candidate submitted' })
