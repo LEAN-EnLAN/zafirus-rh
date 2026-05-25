@@ -1,0 +1,13 @@
+// fixtures
+import { CaseStatus, TaskStatus, TaskType } from '../common/enums';
+import { Employee } from '../employees/employee.entity';
+import { OnboardingCase } from '../cases/onboarding-case.entity';
+import { CandidateSubmission } from '../candidate-submissions/candidate-submission.entity';
+import { EmailTemplate } from '../email-templates/email-template.entity';
+import { OnboardingTask } from '../tasks/onboarding-task.entity';
+
+export const makeEmployee = (overrides: Partial<Employee> = {}): Employee => ({ id: 'emp-1', firstName: 'Ana', lastName: 'Pérez', personalEmail: 'ana@example.com', corporateEmail: null, documentId: null, role: 'Engineer', area: 'Engineering', location: null, startDate: null, managerName: null, taxIdValue: null, bankAccount: null, createdAt: new Date(), updatedAt: new Date(), ...overrides });
+export const makeCase = (overrides: Partial<OnboardingCase> = {}): OnboardingCase => { const employee = overrides.employee ?? makeEmployee({ id: overrides.employeeId ?? 'emp-1' }); return { id: 'case-1', employee, employeeId: employee.id, status: CaseStatus.DRAFT, candidateToken: 'token-1', blockReason: null, cancelReason: null, candidateSubmittedAt: null, dataConsolidatedAt: null, approvedAt: null, activatedAt: null, tasks: [], auditLog: [], candidateSubmissions: [], emailTemplates: [], createdAt: new Date(), updatedAt: new Date(), ...overrides }; };
+export const makeSubmission = (overrides: Partial<CandidateSubmission> = {}): CandidateSubmission => ({ id: 'sub-1', caseId: 'case-1', taxIdType: 'CUIT', taxIdValue: '20-12345678-9', paymentMethod: 'CBU', bankAccount: '123', walletAddress: null, internationalBankData: null, references: null, documents: null, rawPayload: {}, submittedAt: new Date(), onboardingCase: undefined as never, createdAt: new Date(), updatedAt: new Date(), ...overrides });
+export const makeEmailTemplate = (overrides: Partial<EmailTemplate> = {}): EmailTemplate => ({ id: 'email-1', caseId: 'case-1', onboardingCase: undefined as never, subject: 'Subject', bodyHtml: 'Body', variables: null, signature: null, approved: false, changedAfterApproval: false, approvedAt: null, createdAt: new Date(), updatedAt: new Date(), ...overrides });
+export const makeTask = (overrides: Partial<OnboardingTask> = {}): OnboardingTask => ({ id: 'task-1', caseId: 'case-1', onboardingCase: undefined as never, type: TaskType.CREATE_GOOGLE_USER, label: 'Crear usuario de Google Workspace', status: TaskStatus.PENDING, output: null, attempts: 0, startedAt: null, completedAt: null, failedAt: null, createdAt: new Date(), updatedAt: new Date(), ...overrides });
