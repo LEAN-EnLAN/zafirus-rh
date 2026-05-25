@@ -19,7 +19,7 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
     lastName: string
   ): Promise<CreateGoogleUserResponse> {
     /**
-     * Provisions a Google Workspace user via Google Admin SDK.
+     * Creates a Google Workspace user via Google Admin SDK.
      * @deferred Phase 5 — Backend integration (NestJS HTTP client).
      */
     return { success: false, error: 'API no configurada' };
@@ -27,7 +27,7 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
 
   async addUserToGroups(userId: string, groupEmails: string[]): Promise<AddUserToGroupsResponse> {
     /**
-     * Provisions a Google Workspace user via Google Admin SDK.
+     * Adds an existing user to one or more Google Groups.
      * @deferred Phase 5 — Backend integration (NestJS HTTP client).
      */
     return { success: false, error: 'API no configurada' };
@@ -35,7 +35,7 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
 
   async configureGmailSignature(userId: string, signature: string): Promise<ConfigureGmailSignatureResponse> {
     /**
-     * Provisions a Google Workspace user via Google Admin SDK.
+     * Configures the Gmail signature for an existing user.
      * @deferred Phase 5 — Backend integration (NestJS HTTP client).
      */
     return { success: false, error: 'API no configurada' };
@@ -43,7 +43,7 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
 
   async sendWelcomeEmail(to: string, subject: string, body: string): Promise<SendWelcomeEmailResponse> {
     /**
-     * Provisions a Google Workspace user via Google Admin SDK.
+     * Sends the onboarding welcome email to the employee.
      * @deferred Phase 5 — Backend integration (NestJS HTTP client).
      */
     return { success: false, error: 'API no configurada' };
@@ -51,7 +51,7 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
 
   async announceInGroup(groupEmail: string, message: string): Promise<AnnounceInGroupResponse> {
     /**
-     * Provisions a Google Workspace user via Google Admin SDK.
+     * Publishes an onboarding announcement in a target group.
      * @deferred Phase 5 — Backend integration (NestJS HTTP client).
      */
     return { success: false, error: 'API no configurada' };
@@ -59,7 +59,7 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
 
   async requestDevice(employeeId: string, deviceType: string): Promise<RequestDeviceResponse> {
     /**
-     * Provisions a Google Workspace user via Google Admin SDK.
+     * Requests a device assignment/provisioning for the employee.
      * @deferred Phase 5 — Backend integration (NestJS HTTP client).
      */
     return { success: false, error: 'API no configurada' };
@@ -67,7 +67,7 @@ export class RealWorkspaceApiService implements IWorkspaceApi {
 
   async provisionWorkspace(employeeId: string): Promise<ProvisionWorkspaceResponse> {
     /**
-     * Provisions a Google Workspace user via Google Admin SDK.
+     * Runs the consolidated workspace provisioning flow for the employee.
      * @deferred Phase 5 — Backend integration (NestJS HTTP client).
      */
     return { success: false, error: 'API no configurada' };
