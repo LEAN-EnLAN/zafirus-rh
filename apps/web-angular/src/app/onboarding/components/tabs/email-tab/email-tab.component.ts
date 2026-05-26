@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, ViewChildren, QueryList, Output, EventEmitter } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DatePipe } from '@angular/common';
 import DOMPurify from 'dompurify';
 import { OnboardingMockService } from '../../../services/onboarding-mock.service';
 import { EmailTemplate } from '../../../models/onboarding-case.model';
@@ -81,7 +82,7 @@ const GROUP_META: Record<VariableGroup, {
 @Component({
   selector: 'app-email-tab',
   standalone: true,
-  imports: [FormsModule, ZafirusLogoComponent],
+  imports: [FormsModule, ZafirusLogoComponent, DatePipe],
   styles: [`
     :host {
       display: block;
@@ -107,10 +108,45 @@ const GROUP_META: Record<VariableGroup, {
       animation: scaleIn 0.15s ease-out;
     }
 
+    .email-preview-body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.7;
+      color: #1a1a1a;
+    }
+
+    .email-preview-body p {
+      margin-bottom: 1em;
+    }
+
+    .email-preview-body p:last-child {
+      margin-bottom: 0;
+    }
+
     @media (max-width: 768px) {
       .email-tab-body {
         grid-template-columns: 1fr !important;
         overflow-y: auto !important;
+      }
+
+      .email-preview-card {
+        border-radius: 0 !important;
+        border-left: 0 !important;
+        border-right: 0 !important;
+      }
+
+      .email-preview-body-wrap {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+
+      .email-preview-chrome {
+        flex-wrap: wrap !important;
+      }
+
+      .email-preview-chrome-actions {
+        flex-basis: 100% !important;
+        margin-top: 0.75rem;
+        margin-left: 3.25rem;
       }
     }
   `],
@@ -267,44 +303,100 @@ const GROUP_META: Record<VariableGroup, {
           }
         </div>
 
-          @if (showPreview()) {
-          <!-- Preview mode -->
-          <div class="flex-1 min-h-0 overflow-y-auto flex justify-center p-4 lg:p-8">
-            <div class="w-full max-w-2xl">
-              <!-- Subject -->
-              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 rounded-t-lg">
-                <div class="text-xs text-gray-500 mb-1">Asunto:</div>
-                <div class="text-sm font-semibold text-gray-900">{{ subject() }}</div>
+      @if (showPreview()) {
+      <!-- Preview mode: Gmail-style email client -->
+      <div class="flex-1 min-h-0 overflow-y-auto flex justify-center p-4 lg:p-6 bg-[#f5f5f5]">
+        <div class="w-full max-w-[680px] bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden email-preview-card">
+
+          <!-- Email client chrome (Gmail reading pane header) -->
+          <div class="px-5 pt-5 pb-3 border-b border-gray-100">
+
+            <div class="flex items-start gap-3 mb-4 email-preview-chrome">
+              <!-- Avatar circle -->
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[var(--brand-primary)]">
+                <span class="text-white text-xs font-bold select-none">RH</span>
               </div>
-              <!-- Body -->
-              <div class="bg-white rounded-b-lg shadow-sm border border-gray-200 p-6 lg:p-8">
-                <div [innerHTML]="previewHtml()" class="text-sm leading-relaxed text-gray-800"></div>
 
-                <!-- Signature -->
-                <div class="flex items-center justify-between border-t border-gray-200 mt-8 pt-6">
-                  <div class="flex flex-col">
-                    <span class="text-gray-800 font-bold text-sm">{{ signatureName() }}</span>
-                    <span class="text-gray-500 text-xs mt-1">{{ signatureSubtitle() }}</span>
-                  </div>
-                  <div class="flex items-center gap-4">
-                    <div class="w-0.5 h-10 bg-[var(--brand-primary)]"></div>
-                    <div class="bg-[var(--bg-base)] p-3 rounded flex items-center justify-center">
-                      <app-zafirus-logo [size]="24" />
-                    </div>
-                  </div>
+              <div class="flex-1 min-w-0">
+                <!-- From -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-gray-900">Recursos Humanos Zafirus</span>
+                  <span class="text-xs text-gray-400">&lt;rrhh&#64;zafirus.tech&gt;</span>
                 </div>
-
-                <!-- Confidentiality -->
-                <div class="mt-6 pt-4 border-t border-gray-100">
-                  <p class="text-[10px] text-gray-400 leading-relaxed">
-                    Este correo y sus adjuntos son confidenciales y están destinados exclusivamente al destinatario indicado.
-                    Si lo recibiste por error, por favor eliminalo y avisá al remitente.
-                  </p>
+                <!-- To -->
+                <div class="text-xs text-gray-500 mt-0.5">
+                  para {{ c.employee.name }} {{ c.employee.lastName }}
+                  <span class="text-gray-400">&lt;{{ c.employee.corporateEmail || c.employee.email }}&gt;</span>
+                </div>
+                <!-- Date -->
+                <div class="text-xs text-gray-400 mt-2">
+                  {{ now | date:'d MMM. yyyy, HH:mm' }} (UTC-3)
                 </div>
               </div>
 
+              <!-- Reply / Forward buttons (visual only) -->
+              <div class="flex items-center gap-2 flex-shrink-0 email-preview-chrome-actions">
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors cursor-default" tabindex="-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                  </svg>
+                  Responder
+                </button>
+                <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors cursor-default" tabindex="-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                  Reenviar
+                </button>
+              </div>
+            </div>
+
+            <!-- Subject -->
+            <div class="text-base font-semibold text-gray-900 ml-[52px]">
+              {{ subject() }}
+            </div>
           </div>
+
+          <!-- Email body -->
+          <div class="px-6 py-6 lg:px-12 lg:py-8 email-preview-body-wrap">
+            <div [innerHTML]="previewHtml()" class="email-preview-body"></div>
+
+            <!-- Professional signature -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+              <div class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="text-sm font-bold text-gray-800">{{ signatureName() }}</p>
+                  @if (signatureType === 'rrhh') {
+                    <p class="text-xs text-gray-500 mt-0.5">Recursos Humanos | Zafirus Technologies</p>
+                  } @else {
+                    <p class="text-xs text-gray-500 mt-0.5">{{ c.employee.role }} | Zafirus Technologies</p>
+                  }
+                  <p class="text-xs text-gray-400 mt-1">+54 11 5555-0000</p>
+                  <p class="text-xs font-medium text-[var(--brand-primary)]">www.zafirus.tech</p>
+                </div>
+                <div class="flex-shrink-0 flex items-center gap-3">
+                  <div class="w-0.5 h-10 bg-[var(--brand-primary)]"></div>
+                  <div class="bg-[var(--bg-base)] rounded-lg p-2.5">
+                    <app-zafirus-logo [size]="24" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confidentiality disclaimer -->
+            <div class="mt-6 pt-4 border-t border-gray-100">
+              <p class="text-[10px] text-gray-400 leading-relaxed">
+                Este correo y sus adjuntos son confidenciales y están destinados exclusivamente al destinatario indicado.
+                Si lo recibiste por error, por favor eliminalo y avisá al remitente.
+              </p>
+              <p class="text-[10px] text-gray-400/60 mt-2 italic">
+                Este mensaje es generado automáticamente por Zafirus RH.
+              </p>
+            </div>
+          </div>
+
         </div>
+      </div>
           } @else if (c.emailTemplate) {
             <div class="email-tab-body flex-1 min-h-0 overflow-y-auto overflow-x-hidden" style="display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px;">
               <!-- Editor card -->
@@ -548,6 +640,7 @@ export class EmailTabComponent implements AfterViewInit, OnDestroy {
   });
 
   signatureType: SignatureType = 'rrhh';
+  readonly now = new Date();
   signatureVisibleName = '';
   signatureSubtitleText = 'www.zafirus.tech';
 
