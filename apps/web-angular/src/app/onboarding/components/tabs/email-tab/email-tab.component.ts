@@ -376,7 +376,7 @@ const GROUP_META: Record<VariableGroup, {
                 </div>
                 <div class="flex-shrink-0 flex items-center gap-3">
                   <div class="w-0.5 h-10 bg-[var(--brand-primary)]"></div>
-                  <div class="bg-[var(--bg-base)] rounded-lg p-2.5">
+                  <div class="bg-[var(--shell-bg)] rounded-lg p-2.5">
                     <app-zafirus-logo [size]="24" />
                   </div>
                 </div>
