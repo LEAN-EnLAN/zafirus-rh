@@ -371,7 +371,7 @@ const GROUP_META: Record<VariableGroup, {
                   } @else {
                     <p class="text-xs text-gray-500 mt-0.5">{{ c.employee.role }} | Zafirus Technologies</p>
                   }
-                  <p class="text-xs text-gray-400 mt-1">+54 11 5555-0000</p>
+                  <p class="text-xs text-gray-400 mt-1">+1 (307) 461-9864</p>
                   <p class="text-xs font-medium text-[var(--brand-primary)]">www.zafirus.tech</p>
                 </div>
                 <div class="flex-shrink-0 flex items-center gap-3">
